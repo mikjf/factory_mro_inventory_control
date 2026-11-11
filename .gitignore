@@ -1,0 +1,25 @@
+# Data never goes in: query results and anything built from them carry real
+# part numbers, orders and suppliers. They stay in
+# ../factory_mro_inventory_control_private; this repo publishes only the code
+# and the queries that produce them.
+*.xlsx
+*.xlsm
+*.xls
+*.parquet
+*.csv
+*.json
+data/
+outputs/
+archive/
+
+# Connection settings live in a private folder, never here.
+*.ini
+
+# Local tooling
+.idea/
+.claude/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/

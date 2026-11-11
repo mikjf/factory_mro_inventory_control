@@ -1,0 +1,3 @@
+# Runs in the `fp` conda environment (shared with factory_planner).
+pandas>=2.0          # data frames
+pyodbc>=5.0          # ERP queries (ODBC Driver 18 for SQL Server)
