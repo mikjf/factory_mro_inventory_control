@@ -16,6 +16,7 @@ before it is sent: it must start with SELECT or WITH and contain no keyword
 that writes or changes the schema.
 """
 import configparser
+import decimal
 import pathlib
 import re
 import sys
@@ -64,6 +65,23 @@ def check_select_only(sql):
         raise ValueError(f"only SELECT queries are allowed, found {bad.group(1)}")
 
 
+def _fetch(cn, sql, params):
+    """Read through the pyodbc cursor (pd.read_sql wants SQLAlchemy).
+    SQL Server DECIMAL/NUMERIC arrive as Python Decimal and become float."""
+    cur = cn.cursor()
+    try:
+        cur.execute(sql, params or [])
+        names = [d[0] for d in cur.description]
+        rows = [tuple(r) for r in cur.fetchall()]
+    finally:
+        cur.close()
+    df = pd.DataFrame.from_records(rows, columns=names)
+    for c in df.columns:
+        if df[c].map(lambda v: isinstance(v, decimal.Decimal)).any():
+            df[c] = pd.to_numeric(df[c].map(lambda v: None if v is None else float(v)))
+    return df
+
+
 def query(sql, params=None, cn=None):
     """Run one SELECT and return a DataFrame; retry when chosen as deadlock victim."""
     check_select_only(sql)
@@ -72,11 +90,9 @@ def query(sql, params=None, cn=None):
     try:
         for attempt in range(1, DEADLOCK_TRIES + 1):
             try:
-                return pd.read_sql(sql, cn, params=params)
-            except (pyodbc.Error, pd.errors.DatabaseError) as e:
-                err = e.__cause__ if isinstance(e, pd.errors.DatabaseError) else e
-                state = getattr(err, "args", [None])[0]
-                if state != DEADLOCK_STATE or attempt == DEADLOCK_TRIES:
+                return _fetch(cn, sql, params)
+            except pyodbc.Error as e:
+                if e.args[0] != DEADLOCK_STATE or attempt == DEADLOCK_TRIES:
                     raise
                 print(f"gave way to an ERP user (deadlock), "
                       f"retry {attempt} of {DEADLOCK_TRIES - 1} in {DEADLOCK_WAIT} s")

@@ -5,9 +5,9 @@ description and documentation: to be added.
 
 ## ERP access (Infor VISUAL on SQL Server) - read-only
 
-- Python: conda env `fp`
-  (`%LOCALAPPDATA%\miniconda3\envs\fp\python.exe`),
-  with pyodbc and pandas.
+- Python: conda env `fmic`
+  (`%LOCALAPPDATA%\miniconda3\envs\fmic\python.exe`), built from Python
+  3.12.14 (conda-forge) plus `requirements.txt`.
 - Connect only through `erp.py` (`erp.query(sql, params)` returns a
   DataFrame). It reads server/database/driver from
   `../factory_planner_private/extract.ini`, section `[database]`. Never copy

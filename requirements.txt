@@ -1,3 +1,4 @@
-# Runs in the `fp` conda environment (shared with factory_planner).
+# Dependencies for the `fmic` conda environment, built from nothing but
+# Python 3.12.14 (conda-forge) and this file. Floors, not pins.
 pandas>=2.0          # data frames
 pyodbc>=5.0          # ERP queries (ODBC Driver 18 for SQL Server)
