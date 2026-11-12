@@ -53,6 +53,23 @@ STOCK = re.compile(
 PART = re.compile(r"ricamb|sostitu|cambiat|montat\w* (?:nuov|il|la|un)|pezz[oi] nuov")
 
 
+# Why a "to order" ticket waits (sensei: outliers by cause), first match wins:
+# a project or investment, an external company or technician, else the part.
+INVESTMENT = re.compile(r"investiment|preventivo\b|bozza|linee? vita|progett")
+EXTERNAL = re.compile(
+    r"\bditta\b|azienda esterna|\btecnic[oi]\s+(?!ma\b|e\b|di\b|per\b)[a-z]{3,}|sopralluogo"
+    r"|intervento esterno|\bservice\b|assistenza (?:tecnica|esterna|idraulica|modula|del fornitore)"
+    r"|tecnici modula|arrivo del tecnico")
+
+
+def wait_cause(text):
+    if INVESTMENT.search(text):
+        return "lavori / investimento"
+    if EXTERNAL.search(text):
+        return "intervento esterno"
+    return "ricambio"
+
+
 def flag(text):
     """Text flag; the order of the tests is the precedence."""
     if re.search(r"(?:ricamb\w*|pezz[oi])[^|]{0,30}già presente", text):
@@ -100,6 +117,7 @@ def build():
     s["FLAG"] = s.FLAG_TEXT
     s.loc[(s.SAP_PO_LINES > 0) & (s.FLAG_TEXT == "part, source unknown"), "FLAG"] = "ordered"
     s["LEAD_TIME_H"] = (s.CLOSE_DATE - s.CREATE_DATE).dt.total_seconds() / 3600
+    s["WAIT_CAUSE"] = s.TEXT.map(wait_cause).where(s.FLAG == "ordered")
     OUT.mkdir(parents=True, exist_ok=True)
     s.drop(columns=["REPLIES"]).to_parquet(OUT / "s_tickets.parquet", index=False)
     return s
