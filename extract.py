@@ -14,9 +14,12 @@ Periods (CREATE_DATE in [start, end)):
     sap_po_lines      FY25 + FY26 + October 2026: an item's lead time needs
                       history, spend is FY26
     machine_monitoring  fixed in the SQL: FY26 start to the current week
+    docuware_orders, docuware_status  orders stored in DocuWare in FY25 + FY26
+                      + October 2026 (status history: each STATUS_PROCESS change)
 
-Read-only, through erp.py. The SAP prefix ({sap} in the SQL) comes from the
-private settings file ../factory_mro_inventory_control_private/fmic.ini.
+Read-only, through erp.py. The SAP prefix ({sap}) and the DocuWare linked
+server ({linked}) come from the private settings file
+../factory_mro_inventory_control_private/fmic.ini.
 The script refuses to write inside this repository.
 """
 import configparser
@@ -38,15 +41,21 @@ QUERIES = {
     "replies": ("factoryapp_replies.sql", ["2025-10-01", "2026-11-01"]),
     "sap_po_lines": ("sap_maintenance_po_lines.sql", ["2024-10-01", "2026-11-01"]),
     "machine_monitoring": ("machine_monitoring.sql", []),
+    "docuware_orders": ("docuware_purchase_orders.sql", ["2024-10-01", "2026-11-01"]),
+    "docuware_status": ("docuware_status_history.sql", ["2024-10-01", "2026-11-01"]),
 }
+
+# placeholder in the SQL -> (section, key) in the private settings file
+PRIVATE_NAMES = {"{sap}": ("sap", "prefix"), "{linked}": ("docuware", "linked")}
 
 
 def sql_text(file):
     sql = (QUERY_DIR / file).read_text(encoding="utf-8-sig")
-    if "{sap}" in sql:
-        cfg = configparser.ConfigParser()
-        cfg.read(SETTINGS, encoding="utf-8")
-        sql = sql.replace("{sap}", cfg["sap"]["prefix"])
+    cfg = configparser.ConfigParser()
+    cfg.read(SETTINGS, encoding="utf-8")
+    for placeholder, (section, key) in PRIVATE_NAMES.items():
+        if placeholder in sql:
+            sql = sql.replace(placeholder, cfg[section][key])
     return sql
 
 
