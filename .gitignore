@@ -15,6 +15,10 @@ archive/
 # Connection settings live in a private folder, never here.
 *.ini
 
+# The presentation's slide files (real names and figures), published to a
+# private artifact from here: never committed.
+.deck/
+
 # Local tooling
 .idea/
 .claude/

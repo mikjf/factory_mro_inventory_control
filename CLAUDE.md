@@ -1,7 +1,18 @@
 # factory_mro_inventory_control
 
-MRO (maintenance, repair and operations) inventory control. Project
-description and documentation: to be added.
+MRO (maintenance, repair and operations) inventory control: the data behind
+the Lean Six Sigma project on maintenance spare parts (Modula warehouse, SAP,
+FactoryApp tickets).
+
+## Layout
+
+- `queries/*.sql`: the extract queries (FactoryApp tickets and replies,
+  machine monitoring, SAP maintenance purchase order lines; DocuWare for IT).
+- `extract.py`: runs them and writes Parquet to
+  `../factory_mro_inventory_control_private/data/extract/`.
+- `define.py`: the Define KPIs of slides 3 and 5.
+- Private settings (the SAP linked-server prefix) live in
+  `../factory_mro_inventory_control_private/fmic.ini`, never here.
 
 ## ERP access (Infor VISUAL on SQL Server) - read-only
 
