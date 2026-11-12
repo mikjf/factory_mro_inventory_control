@@ -6,8 +6,9 @@ Method (approved by the team, see the slide 3 box "Come si calcola"):
 - tickets: S (breakdown) and PM2 (preventive) created in the ticket window;
   hours = sum of WORKED_HOURS.
 - interventions per week: tickets per full monitoring week (Mon-Sun), averaged.
-- downtime: per machine-group/week, GROUP_DOWNTIME (calendar hours from the
-  "down" ticket to the machine back up) capped at 168 h (one week).
+- downtime: per machine-group/week with planned hours, GROUP_DOWNTIME
+  (calendar hours from the "down" ticket to the machine back up, plus manual
+  adjustments) capped at 168 h (one week).
 - production impact today: downtime x PLANNED/168 x hourly value;
   maximum: downtime x MAX_CAP/168 x hourly value; 12 months: x 52 / weeks.
 """
@@ -39,9 +40,14 @@ def kpis(tickets, monitoring, t_from, t_to, w_first, w_last):
     s = t[t.TYPE == "s"]
     days = (pd.Timestamp(t_to) - pd.Timestamp(t_from)).days
 
+    # Tracked weeks only (planned hours and capacity), as on the approved
+    # slide: the query also returns unused weeks (UNUSED_WEEK = 'Y').
     m = monitoring[(monitoring.WEEK_START_DATE >= w_first)
-                   & (monitoring.WEEK_START_DATE <= w_last)].copy()
-    weeks = m.WEEK_START_DATE.nunique()
+                   & (monitoring.WEEK_START_DATE <= w_last)
+                   & (monitoring.RAG_DATA_STATUS == "Tracked")].copy()
+    # calendar weeks, so a closed week (no planned hours) still counts in the
+    # 12-month scaling, with zero impact
+    weeks = len(pd.date_range(w_first, w_last, freq="7D"))
     m["down"] = m.GROUP_DOWNTIME.fillna(0).clip(upper=WEEK_HOURS)
     down_planned = (m.down * m.PLANNED.fillna(0) / WEEK_HOURS).sum()
     down_max = (m.down * m.MAX_CAP.fillna(0) / WEEK_HOURS).sum()
