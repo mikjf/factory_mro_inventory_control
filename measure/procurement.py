@@ -7,7 +7,9 @@ team's DAI workbook on the fresh extracts.
 Lines: SAP purchase order lines on the three spare-part accounts.
   LT total    = delivery date - creation date (days); empty if delivered
                 before creation ("a posteriori": urgent purchase regularised).
-  LT internal = DocuWare MAIL SENT date - creation date (signature and sending).
+  LT internal = DocuWare MAIL SENT date - creation date (signature and sending);
+                MAIL SENT from the DocuWare audit trail (extracts
+                docuware_status and docuware_orders).
   LT supplier = max(0, delivery date - MAIL SENT date); without a DocuWare
                 date: max(0, LT total - median internal LT).
 Lead-time statistics: lines created in FY25 + FY26 and delivered.
@@ -27,7 +29,6 @@ import erp
 from measure.tickets import SPARE_PART_ACCOUNTS
 
 EXTRACT = erp.PRIVATE / "data" / "extract"
-FROM_IT = erp.PRIVATE / "data" / "from_it"
 OUT = erp.PRIVATE / "data" / "measure"
 FY26 = ("2025-10-01", "2026-10-01")
 LT_FROM = "2024-10-01"
@@ -35,12 +36,22 @@ FAST_DAYS = 3
 RECURRING = 2
 
 
+def _order_no(s):
+    return s.astype(str).str.strip().str.replace(r"\.0$", "", regex=True)
+
+
 def docuware_sent():
-    d = pd.read_excel(FROM_IT / "docuware_purchase_orders.xlsx")
-    d = d[d.STATUS_PROCESS.eq("MAIL SENT")]
-    d["PURCHASE_ORDER"] = d.NUMERO_OA.astype(str).str.strip().str.replace(r"\.0$", "", regex=True)
-    d["DWMODDATETIME"] = pd.to_datetime(d.DWMODDATETIME)
-    return d.groupby("PURCHASE_ORDER").DWMODDATETIME.min().rename("MAIL_SENT")
+    """When each purchase order was sent: the first change to MAIL SENT in the
+    DocuWare audit trail; for a sent order without an audit entry, its last
+    modification time (DWMODDATETIME, a close proxy)."""
+    a = pd.read_parquet(EXTRACT / "docuware_status.parquet")
+    a = a[a.NEW_STATUS.eq("MAIL SENT")].assign(PURCHASE_ORDER=lambda d: _order_no(d.NUMERO_OA))
+    audit = a.groupby("PURCHASE_ORDER").STATUS_DATE.min()
+    o = pd.read_parquet(EXTRACT / "docuware_orders.parquet")
+    o = o[o.STATUS_PROCESS.eq("MAIL SENT")].assign(PURCHASE_ORDER=lambda d: _order_no(d.NUMERO_OA))
+    proxy = o.groupby("PURCHASE_ORDER").DWMODDATETIME.min()
+    sent = audit.combine_first(proxy)
+    return pd.to_datetime(sent).rename("MAIL_SENT")
 
 
 def lines():
