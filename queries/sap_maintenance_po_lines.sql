@@ -13,6 +13,9 @@
 --   today's date, so the extract is reproducible; the extra filter on the
 --   year of the desired date is dropped.
 -- * GL_ACCOUNT_CODE added, so the spare-part accounts can be selected by code.
+-- * Cancelled goods receipts (OPDN.CANCELED <> 'N') are left out. A receipt
+--   cancelled and entered again was counted twice (double quantity and
+--   value), and a receipt cancelled without replacement counted as delivered.
 WITH RECEIPTS AS (
 SELECT
     OPOR.CARDCODE COLLATE SQL_Latin1_General_CP850_CI_AS AS VENDOR_ID,
@@ -40,10 +43,12 @@ SELECT
 FROM {sap}.OPOR
 INNER JOIN {sap}.POR1 ON POR1.DOCENTRY = OPOR.DOCENTRY
 LEFT JOIN  {sap}.OSHP ON OSHP.TRNSPCODE = OPOR.TRNSPCODE
-LEFT JOIN  {sap}.PDN1 ON PDN1.BASEENTRY = POR1.DOCENTRY
+LEFT JOIN ({sap}.PDN1
+           INNER JOIN {sap}.OPDN ON OPDN.DOCENTRY = PDN1.DOCENTRY
+                                AND OPDN.CANCELED = 'N')
+                      ON PDN1.BASEENTRY = POR1.DOCENTRY
                      AND PDN1.BASELINE  = POR1.LINENUM
                      AND PDN1.BASETYPE  = 22
-LEFT JOIN  {sap}.OPDN ON OPDN.DOCENTRY = PDN1.DOCENTRY
 LEFT JOIN  {sap}.OACT ON OACT.ACCTCODE = POR1.ACCTCODE
 WHERE OPOR.CREATEDATE >= ?
   AND OPOR.CREATEDATE <  ?
