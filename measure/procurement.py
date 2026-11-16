@@ -12,6 +12,9 @@ Lines: SAP purchase order lines on the three spare-part accounts.
                 docuware_status and docuware_orders).
   LT supplier = max(0, delivery date - MAIL SENT date); without a DocuWare
                 date: max(0, LT total - median internal LT).
+  On time     = the company's vendor on-time delivery rule: delivery date on or
+                before the vendor's promise date (POR1.U_CONFERMATO), else the
+                desired date when there is no promise. DAYS_LATE > 0 = late.
 Lead-time statistics: lines created in FY25 + FY26 and delivered.
 Item = normalised item description (the SAP item code is often generic:
 "1 AC = 1 articolo" is not applied yet). Item LT = median LT total of its lines.
@@ -71,6 +74,9 @@ def lines():
     p.loc[no_dw, "LT_SUPPLIER"] = (p.LT_TOTAL - median_internal).clip(lower=0)
     p.loc[p.A_POSTERIORI, "LT_SUPPLIER"] = None
     p["SUPPLIER_LT_SOURCE"] = no_dw.map({True: "estimate", False: "DocuWare"})
+    p["REFERENCE_DATE"] = p.VENDOR_PROMISE_DATE.fillna(p.SMB_DESIRED_DATE)
+    p["HAS_PROMISE"] = p.VENDOR_PROMISE_DATE.notna()
+    p["DAYS_LATE"] = (d - p.REFERENCE_DATE.dt.normalize()).dt.days
     p["DELIVERED_VALUE_CHF"] = p.VALUE_CHF * p.DELIVERED_QTY.fillna(0) / p.ORDER_QTY
     p["IN_FY26"] = (p.DELIVERY_DATE >= FY26[0]) & (p.DELIVERY_DATE < FY26[1])
     p["FOR_LT_STATS"] = (p.CREATE_DATE >= LT_FROM) & (p.CREATE_DATE < FY26[1]) & p.DELIVERY_DATE.notna()

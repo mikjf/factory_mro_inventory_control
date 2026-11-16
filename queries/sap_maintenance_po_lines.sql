@@ -16,6 +16,12 @@
 -- * Cancelled goods receipts (OPDN.CANCELED <> 'N') are left out. A receipt
 --   cancelled and entered again was counted twice (double quantity and
 --   value), and a receipt cancelled without replacement counted as delivered.
+-- * DELIVERY_DATE: when the order's delivery term (Incoterm) is missing or not
+--   in the list, fall back to the delivery note date, else the receipt date,
+--   as the VISUAL leg of the vendor on-time delivery query does. Before, those
+--   lines had no delivery date and dropped out of every lead time.
+-- * VENDOR_PROMISE_DATE (POR1.U_CONFERMATO): the date the vendor committed to,
+--   for on-time delivery against the promise, else the desired date.
 WITH RECEIPTS AS (
 SELECT
     OPOR.CARDCODE COLLATE SQL_Latin1_General_CP850_CI_AS AS VENDOR_ID,
@@ -29,11 +35,13 @@ SELECT
     OACT.ACCTNAME                         AS GL_ACCOUNT_NAME,
     OPOR.CREATEDATE                       AS CREATE_DATE,
     ISNULL(POR1.SHIPDATE, OPOR.DOCDUEDATE) AS SMB_DESIRED_DATE,
+    POR1.U_CONFERMATO                     AS VENDOR_PROMISE_DATE,
     CASE
         WHEN OSHP.TRNSPNAME LIKE 'EXW%' OR OSHP.TRNSPNAME LIKE 'FCA%' OR OSHP.TRNSPNAME LIKE 'CPT%' OR OSHP.TRNSPNAME LIKE 'CIP%' THEN OPDN.TAXDATE
         WHEN OSHP.TRNSPNAME LIKE 'Fran%' OR OSHP.TRNSPNAME LIKE 'Frank%' THEN OPDN.TAXDATE
         WHEN OSHP.TRNSPNAME LIKE 'DAP%' OR OSHP.TRNSPNAME LIKE 'DPU%' OR OSHP.TRNSPNAME LIKE 'DDP%' THEN OPDN.DOCDATE
         WHEN OSHP.TRNSPNAME LIKE 'DAF%' OR OSHP.TRNSPNAME LIKE 'DDU%' THEN OPDN.DOCDATE
+        ELSE ISNULL(OPDN.TAXDATE, OPDN.DOCDATE)
     END                                   AS DELIVERY_DATE,
     POR1.QUANTITY                         AS ORDER_QTY,
     PDN1.QUANTITY                         AS DELIVERED_QTY_LINE,
@@ -59,14 +67,14 @@ WHERE OPOR.CREATEDATE >= ?
 PO_LINES AS (
 SELECT
     VENDOR_ID, VENDOR, PO_ENTRY, PURCHASE_ORDER, LINE_NO, ITEM_CODE, ITEM_DESCRIPTION,
-    GL_ACCOUNT_CODE, GL_ACCOUNT_NAME, CREATE_DATE, SMB_DESIRED_DATE, ORDER_QTY, DOC_CURRENCY,
+    GL_ACCOUNT_CODE, GL_ACCOUNT_NAME, CREATE_DATE, SMB_DESIRED_DATE, VENDOR_PROMISE_DATE, ORDER_QTY, DOC_CURRENCY,
     SUM(DELIVERED_QTY_LINE) AS DELIVERED_QTY,
     MAX(DELIVERY_DATE)      AS DELIVERY_DATE,
     MAX(UNIT_PRICE_FC)      AS UNIT_PRICE_FC,
     MAX(LINE_VALUE_CHF)     AS VALUE_CHF
 FROM RECEIPTS
 GROUP BY VENDOR_ID, VENDOR, PO_ENTRY, PURCHASE_ORDER, LINE_NO, ITEM_CODE, ITEM_DESCRIPTION,
-         GL_ACCOUNT_CODE, GL_ACCOUNT_NAME, CREATE_DATE, SMB_DESIRED_DATE, ORDER_QTY, DOC_CURRENCY
+         GL_ACCOUNT_CODE, GL_ACCOUNT_NAME, CREATE_DATE, SMB_DESIRED_DATE, VENDOR_PROMISE_DATE, ORDER_QTY, DOC_CURRENCY
 )
 SELECT
     VENDOR_ID,
@@ -79,6 +87,7 @@ SELECT
     GL_ACCOUNT_NAME,
     CREATE_DATE,
     SMB_DESIRED_DATE,
+    VENDOR_PROMISE_DATE,
     DELIVERY_DATE,
     ORDER_QTY,
     DELIVERED_QTY,
