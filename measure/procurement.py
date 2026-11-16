@@ -108,19 +108,27 @@ def items(p):
     i.loc[slow & (i.SUPPLIER_LT_MEDIAN <= FAST_DAYS), "LEVER"] = "2 fast signatures"
     i.loc[slow & i.RECURRING & (i.SUPPLIER_LT_MEDIAN > FAST_DAYS), "LEVER"] = "1 Modula"
     i.loc[i.CLASS.eq("a posteriori"), "LEVER"] = "a posteriori"
-    # items the team excluded from stock (e.g. building, not machine spares):
-    # listed in the private folder, never in this repository
-    i["EXCLUDED"] = i.index.isin(excluded_items())
+    # items the team excluded from stock (e.g. building, not machine spares, or
+    # small parts from consumables vendors): listed in the private folder,
+    # never in this repository
+    items_out, vendors_out = excluded()
+    by_vendor = i.MAIN_VENDOR.fillna("").str.upper().map(lambda v: any(x in v for x in vendors_out))
+    i["EXCLUDED"] = i.index.isin(items_out) | by_vendor
     i.loc[i.EXCLUDED & i.LEVER.eq("1 Modula"), "LEVER"] = "excluded"
     return i
 
 
-def excluded_items():
+def excluded():
+    """(item descriptions, vendor name fragments) excluded from the stock
+    candidates. One per line; vendor lines start with "vendor:"."""
     f = erp.PRIVATE / "exclude_from_stock.txt"
     if not f.exists():
-        return set()
-    lines = (x.strip() for x in f.read_text(encoding="utf-8").splitlines())
-    return {x.upper() for x in lines if x and not x.startswith("#")}
+        return set(), set()
+    lines = [x.strip() for x in f.read_text(encoding="utf-8").splitlines()]
+    lines = [x for x in lines if x and not x.startswith("#")]
+    vendors = {x.split(":", 1)[1].strip().upper() for x in lines if x.lower().startswith("vendor:")}
+    items = {x.upper() for x in lines if not x.lower().startswith("vendor:")}
+    return items, vendors
 
 
 def build():
