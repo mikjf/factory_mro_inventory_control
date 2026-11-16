@@ -108,7 +108,19 @@ def items(p):
     i.loc[slow & (i.SUPPLIER_LT_MEDIAN <= FAST_DAYS), "LEVER"] = "2 fast signatures"
     i.loc[slow & i.RECURRING & (i.SUPPLIER_LT_MEDIAN > FAST_DAYS), "LEVER"] = "1 Modula"
     i.loc[i.CLASS.eq("a posteriori"), "LEVER"] = "a posteriori"
+    # items the team excluded from stock (e.g. building, not machine spares):
+    # listed in the private folder, never in this repository
+    i["EXCLUDED"] = i.index.isin(excluded_items())
+    i.loc[i.EXCLUDED & i.LEVER.eq("1 Modula"), "LEVER"] = "excluded"
     return i
+
+
+def excluded_items():
+    f = erp.PRIVATE / "exclude_from_stock.txt"
+    if not f.exists():
+        return set()
+    lines = (x.strip() for x in f.read_text(encoding="utf-8").splitlines())
+    return {x.upper() for x in lines if x and not x.startswith("#")}
 
 
 def build():
