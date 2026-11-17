@@ -108,9 +108,9 @@ def items(p):
     i.loc[slow & (i.SUPPLIER_LT_MEDIAN <= FAST_DAYS), "LEVER"] = "2 fast signatures"
     i.loc[slow & i.RECURRING & (i.SUPPLIER_LT_MEDIAN > FAST_DAYS), "LEVER"] = "1 Modula"
     i.loc[i.CLASS.eq("a posteriori"), "LEVER"] = "a posteriori"
-    # items the team excluded from stock (e.g. building, not machine spares, or
-    # small parts from consumables vendors): listed in the private folder,
-    # never in this repository
+    # items the team excluded from stock (e.g. one-off replacements, or small
+    # parts from consumables vendors): listed in the private folder, never in
+    # this repository
     items_out, vendors_out = excluded()
     by_vendor = i.MAIN_VENDOR.fillna("").str.upper().map(lambda v: any(x in v for x in vendors_out))
     i["EXCLUDED"] = i.index.isin(items_out) | by_vendor
