@@ -4,6 +4,17 @@ MRO (maintenance, repair and operations) inventory control: the data behind
 the Lean Six Sigma project on maintenance spare parts (Modula warehouse, SAP,
 FactoryApp tickets).
 
+## Shared rules - read first
+
+The rules every factory project follows (databases, SQL, data and people, ERP
+facts, how to answer, git) are in
+`~\GitHub\factory_shared_private\RULES.md`, imported here:
+
+@~/GitHub/factory_shared_private/RULES.md
+
+If that import did not load, read the file before anything else. What follows
+is specific to this project.
+
 ## Layout
 
 - `queries/*.sql`: the extract queries (FactoryApp tickets and replies,
@@ -23,7 +34,7 @@ FactoryApp tickets).
   3.12.14 (conda-forge) plus `requirements.txt`.
 - Connect only through `erp.py` (`erp.query(sql, params)` returns a
   DataFrame). It reads server/database/driver from
-  `../factory_planner_private/extract.ini`, section `[database]`. Never copy
+  `../factory_shared_private/connections/visual.ini`, section `[database]`. Never copy
   those values into code, commits or chat.
 - Windows authentication only (`Trusted_Connection=yes`), no username or
   password anywhere.

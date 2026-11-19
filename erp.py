@@ -3,7 +3,7 @@
     import erp
     df = erp.query("SELECT ... WHERE x >= ?", [since])
 
-Connection settings come from ../factory_planner_private/extract.ini, section
+Connection settings come from ../factory_shared_private/connections/visual.ini, section
 [database] (server, database, driver), never from this repository. Windows
 authentication only: no password is read or stored.
 
@@ -26,7 +26,7 @@ import pandas as pd
 import pyodbc
 
 HERE = pathlib.Path(__file__).resolve().parent
-CONFIG = HERE.parent / "factory_planner_private" / "extract.ini"
+CONFIG = HERE.parent / "factory_shared_private" / "connections" / "visual.ini"
 PRIVATE = HERE.parent / "factory_mro_inventory_control_private"
 DEADLOCK_STATE = "40001"    # SQLSTATE of "chosen as the deadlock victim"
 DEADLOCK_TRIES = 4          # the first attempt and three retries
