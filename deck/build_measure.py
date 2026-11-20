@@ -172,7 +172,8 @@ def main():
     textbox(s13, 0.98, 6.85, 11.0, 0.4, [(SOURCE_TICKETS, {"size": 8, "italic": True, "color": INK2})])
     notes(s13, "Metodo: ticket S FY26 classificati dal testo (ordinato, offerta, in attesa del ricambio, "
                "cercato e non trovato) e dagli ordini SAP con il codice macchina creati mentre il ticket era "
-               "aperto. Il 7% di questi ticket si chiude in meno di 4 ore: il lavoro prosegue su un altro "
+               f"aperto. Il {num((a < 4).mean() * 100, 0)}% di questi ticket si chiude in meno di 4 ore: "
+               "il lavoro prosegue su un altro "
                "ticket in attesa del pezzo, quindi la mediana è prudente.")
 
     # --- slide 14: part available ------------------------------------------

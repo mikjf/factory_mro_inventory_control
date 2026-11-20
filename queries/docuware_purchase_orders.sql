@@ -1,8 +1,8 @@
 -- DocuWare purchase orders: when each order was created and when it was
 -- last modified (= MAIL SENT for sent orders), one row per document.
 --
--- dwdata is reached through the linked server; {linked} is filled in by
--- extract.py from the private settings file. OPENQUERY runs the statement on
+-- DocuWare's database ({dwdb}) is reached through the linked server; both
+-- placeholders are filled in by extract.py from the private settings file. OPENQUERY runs the statement on
 -- the DocuWare server, because the table has XML columns, which distributed
 -- queries cannot read. No user names are selected.
 --
@@ -20,7 +20,7 @@ FROM OPENQUERY({linked}, '
         OA.DWSTOREDATETIME,
         OA.DWMODDATETIME,
         OA.DWCONTENTMODDATETIME
-    FROM dwdata.dbo.OA AS OA
+    FROM {dwdb}.dbo.OA AS OA
     WHERE OA.DOCUMENT_TYPE = ''Purchase Order''
       AND OA.DWSTOREDATETIME >= ''20241001''
 ')

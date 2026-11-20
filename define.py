@@ -12,6 +12,7 @@ Method (approved by the team, see the slide 3 box "Come si calcola"):
 - production impact today: downtime x PLANNED/168 x hourly value;
   maximum: downtime x MAX_CAP/168 x hourly value; 12 months: x 52 / weeks.
 """
+import configparser
 import json
 
 import pandas as pd
@@ -19,7 +20,16 @@ import pandas as pd
 import erp
 
 DATA = erp.PRIVATE / "data" / "extract"
-HOURLY_VALUE = 169.40      # CHF per produced hour (slide 3 source)
+
+
+def _hourly_value():
+    """CHF per produced hour (slide 3 source): private, in fmic.ini [define]."""
+    cfg = configparser.ConfigParser()
+    cfg.read(erp.PRIVATE / "fmic.ini", encoding="utf-8")
+    return cfg.getfloat("define", "hourly_value")
+
+
+HOURLY_VALUE = _hourly_value()
 WEEK_HOURS = 168
 
 WINDOWS = {

@@ -24,8 +24,11 @@ is specific to this project.
 - `extract.py`: runs them and writes Parquet to
   `../factory_mro_inventory_control_private/data/extract/`.
 - `define.py`: the Define KPIs of slides 3 and 5.
-- Private settings (the SAP prefix and the DocuWare linked server) live in
-  `../factory_mro_inventory_control_private/fmic.ini`, never here.
+- Private settings (the SAP prefix, the DocuWare linked server and database,
+  and the hourly value of `define.py`) live in
+  `../factory_mro_inventory_control_private/fmic.ini`, never here. The repo
+  is meant to be public (2026-11-20): no names, values or figures in code,
+  comments or slide text - compute figures from the data.
 
 ## ERP access (Infor VISUAL on SQL Server) - read-only
 

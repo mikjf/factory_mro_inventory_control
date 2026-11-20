@@ -17,8 +17,8 @@ Periods (CREATE_DATE in [start, end)):
     docuware_orders, docuware_status  orders stored in DocuWare in FY25 + FY26
                       + October 2026 (status history: each STATUS_PROCESS change)
 
-Read-only, through erp.py. The SAP prefix ({sap}) and the DocuWare linked
-server ({linked}) come from the private settings file
+Read-only, through erp.py. The SAP prefix ({sap}), the DocuWare linked
+server ({linked}) and its database ({dwdb}) come from the private settings file
 ../factory_mro_inventory_control_private/fmic.ini.
 The script refuses to write inside this repository.
 """
@@ -46,7 +46,8 @@ QUERIES = {
 }
 
 # placeholder in the SQL -> (section, key) in the private settings file
-PRIVATE_NAMES = {"{sap}": ("sap", "prefix"), "{linked}": ("docuware", "linked")}
+PRIVATE_NAMES = {"{sap}": ("sap", "prefix"), "{linked}": ("docuware", "linked"),
+                 "{dwdb}": ("docuware", "database")}
 
 
 def sql_text(file):
