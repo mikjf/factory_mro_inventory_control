@@ -27,3 +27,6 @@ __pycache__/
 .venv/
 venv/
 .ipynb_checkpoints/
+
+# Claude Code's instructions for this repo: read from disk, never published
+CLAUDE.md
